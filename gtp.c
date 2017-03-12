@@ -35,6 +35,11 @@ int load_gtp_file(const char *gtp_file, void* memory, int block)
         Sint64 block_start_offset = SDL_RWtell(file);
 
         fprintf(stderr, "%d. Block type: 0x%02x, OFFSET=0x%08lx LEN=0x%04x\n", (int)bcnt, (int)hdr.type, block_start_offset, (int)hdr.len);
+        if(block_start_offset == 0) 
+        {
+            fprintf(stderr, "Could not read file!\n");
+            break;
+        }
 
         switch(hdr.type) 
         {

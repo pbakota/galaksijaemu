@@ -12,7 +12,7 @@ typedef struct {
     // crc.w at the end
 } GTP_datablock;
 
-int load_gtp_file(char *gtp_file, void* memory, int block)
+int load_gtp_file(const char *gtp_file, void* memory, int block)
 {
     Uint16 bcnt = 0;
     SDL_RWops *file = SDL_RWFromFile(gtp_file, "rb");
@@ -91,7 +91,39 @@ int load_gtp_file(char *gtp_file, void* memory, int block)
 }
 
 
-int save_gtp_file(char* filename, void *memory)
+int save_gtp_file(const char* gtp_file, void *memory, word start, word end)
 {
-    return -1;
+    SDL_RWops *file = SDL_RWFromFile(gtp_file, "wb");
+
+    if(file == NULL)
+    {
+        fprintf(stderr, "Unable to open GTP file \"%s\"\n", gtp_file);
+        return -1;
+    }
+
+    GTP_header hdr = { 0, end-start + sizeof(GTP_datablock)+3 };
+    SDL_WriteU8(file, hdr.type);
+    SDL_WriteLE32(file, hdr.len);
+
+    byte crc = 0xa5;
+    crc += (start&0xff);
+    crc += ((start>>8)&0xff);
+    crc += (end&0xff);
+    crc += ((end>>8)&0xff);
+
+    for(int i=start; i<end; ++i)
+    {
+        crc += *((byte*)memory+i);
+    }
+
+    SDL_WriteU8(file, 0xa5); // magic
+    SDL_WriteLE16(file, start);
+    SDL_WriteLE16(file, end);
+
+    SDL_RWwrite(file, memory+start, end-start, 1);
+    SDL_WriteU8(file, (byte)(0xff-crc)); // crc
+    SDL_WriteU8(file, 0xff); // garbage
+
+    SDL_RWclose(file);
+    return 0;
 }

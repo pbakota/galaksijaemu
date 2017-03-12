@@ -8,18 +8,15 @@ void draw_cursor(int pos)
     SDL_FillRect(screen, &r, SDL_MapRGBA(screen->format, 128,0,0,255));
 }
 
-void clear_events()
-{
-    SDL_Event event;
-    while(SDL_PollEvent(&event));
-}
-
 int input_text(const char* prompt, char* input_buffer)
 {
     int input_finished = 0;
-    int prompt_len = strlen(prompt), pos=strlen(input_buffer);
+    int prompt_len = strlen(prompt), pos=strlen(input_buffer), max_len = 32-prompt_len-1;
 
-    clear_events();
+    SDL_Rect input_rect = { 0, 0, max_len*SIRINA, VISINA };
+
+    SDL_StartTextInput();
+    SDL_SetTextInputRect(&input_rect);
 
     while(input_finished == 0)
     {
@@ -42,49 +39,23 @@ int input_text(const char* prompt, char* input_buffer)
                     ExitLoop = 1;
                     input_finished = 2;
                 break;
-                case SDL_KEYPRESSED:
+                case SDL_TEXTINPUT:
+                    if(strlen(input_buffer) < max_len)
+                    {
+                        int len = strlen(input_buffer);
+                        for(int i=len-1; i>=pos; --i)
+                        {
+                            input_buffer[i+1]=input_buffer[i];
+                        }
+                        input_buffer[pos++] = toupper(event.text.text[0]);
+                        input_buffer[len+1] = 0;
+                    }
+                break;
+                case SDL_KEYDOWN:
                 {
                     int c;
                     switch(event.key.keysym.sym)
                     {
-                        case SDLK_a: c = 'A'; break;
-                        case SDLK_b: c = 'B'; break;
-                        case SDLK_c: c = 'C'; break;
-                        case SDLK_d: c = 'D'; break;
-                        case SDLK_e: c = 'E'; break;
-                        case SDLK_f: c = 'F'; break;
-                        case SDLK_g: c = 'G'; break;
-                        case SDLK_h: c = 'H'; break;
-                        case SDLK_i: c = 'I'; break;
-                        case SDLK_j: c = 'J'; break;
-                        case SDLK_k: c = 'K'; break;
-                        case SDLK_l: c = 'L'; break;
-                        case SDLK_m: c = 'M'; break;
-                        case SDLK_n: c = 'N'; break;
-                        case SDLK_o: c = 'O'; break;
-                        case SDLK_p: c = 'P'; break;
-                        case SDLK_q: c = 'Q'; break;
-                        case SDLK_r: c = 'R'; break;
-                        case SDLK_s: c = 'S'; break;
-                        case SDLK_t: c = 'T'; break;
-                        case SDLK_u: c = 'U'; break;
-                        case SDLK_v: c = 'V'; break;
-                        case SDLK_w: c = 'W'; break;
-                        case SDLK_x: c = 'X'; break;
-                        case SDLK_y: c = 'Y'; break;
-                        case SDLK_z: c = 'Z'; break;
-                        //
-                        case SDLK_0: c = '0'; break;
-                        case SDLK_1: c = '1'; break;
-                        case SDLK_2: c = '2'; break;
-                        case SDLK_3: c = '3'; break;
-                        case SDLK_4: c = '4'; break;
-                        case SDLK_5: c = '5'; break;
-                        case SDLK_6: c = '6'; break;
-                        case SDLK_7: c = '7'; break;
-                        case SDLK_8: c = '8'; break;
-                        case SDLK_9: c = '9'; break;
-                        case SDLK_SPACE: c = ' '; break;
                         case SDLK_ESCAPE: c = 0x1b; break;
                         case SDLK_RETURN: c = 0x0a; break;
                         case SDLK_DELETE: c = 0x7f; break;
@@ -110,21 +81,17 @@ int input_text(const char* prompt, char* input_buffer)
                             }
                         break;
                         case 0x08: // BACKSPACE
+                            if(pos > 0)
+                            {
+                                memcpy((void*)input_buffer+pos-1, (void*)input_buffer+pos, strlen(input_buffer)-pos+1);
+                                pos --;
+                            }
                         break;
                         case 1:
                             if(pos>0) pos --;
                         break;
                         case 2:
                             if(pos < strlen(input_buffer)) pos ++;
-                        break;
-                        default:
-                            if(c)
-                            {
-                                if(pos < 32 - prompt_len)
-                                {
-                                    input_buffer[pos++] = c;
-                                }
-                            }
                         break;
                     }
                 }                
@@ -152,7 +119,7 @@ int input_text(const char* prompt, char* input_buffer)
         SDL_Delay(1000/50);
     }
 
-    clear_events();
+    SDL_StopTextInput();
 
     return input_finished - 1;
 }
@@ -172,25 +139,63 @@ int input_number(const char* prompt, word* number)
     return result;
 }
 
+const char* build_path(const char* dirname, const char* filename)
+{
+    static char path_buf[MAX_INPUT_SIZE*2] = {'\0'};
+
+    memcpy((void*)path_buf, (void*)dirname, strlen(dirname)+1);
+
+    #if defined(__WIN32__)
+    strcat(path_buf, "\\");
+    #else
+    strcat(path_buf, "/");
+    #endif
+    strcat(path_buf, filename);
+
+    return (const char*)&path_buf[0];
+}
+
 void save_memory()
 {
-    word start = 0x2b3c;
-    input_number("START ADDR:", &start);
+    // By default save BASIC program
+    word start = 0x2c36;
+    word end = MEMORY[0x2c38] + MEMORY[0x2c39] * 256;
+
+    char filename[MAX_INPUT_SIZE/2];
+
+    if(input_number("START ADDR:", &start) != 0) return;
+    if(input_number("END ADDR:", &end) != 0) return;
+
+    if(input_text("SAVE FILE:", filename) != 0 || strlen(filename) == 0) return;
     
-    //save_gtp_file(file, MEMORY);
+    const char* path = build_path(workdir, filename);
+    printf("Saving memory to \"%s\", start=&%04X, end=&%04X\n", path, start, end);
+
+    if(save_gtp_file(path, MEMORY, start, end) !=0 ) 
+    {
+        fprintf(stderr, "Save error!\n");
+    }
+    else
+    {
+        fprintf(stderr, "Memory saved.\n");
+    }
 }
 
-void load_basic()
+void load_memory()
 {
-    
-}
+    char filename[MAX_INPUT_SIZE];
+    char yn[2] = {'Y', '\0'};
+    int warmstart = 0;
 
-void save_basic()
-{
+    if(input_text("LOAD FILE:", filename) != 0 || strlen(filename) == 0) return;
+    if(input_text("BASIC WARM START (Y/N)?", yn) != 0) return;
 
-}
-
-void load_gtp()
-{
-
+    const char* path = build_path(workdir, filename);
+    if(load_gtp_file(path, MEMORY, 0) == 0)
+    {
+        if(warmstart)
+        {
+            R.PC.W = 0x0317; // BASIC WARM START
+        }
+    }
 }

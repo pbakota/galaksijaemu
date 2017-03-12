@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <SDL2/SDL.h>
+#include <unistd.h>
 
 #include "Z80/Z80.h"
 
@@ -19,6 +20,7 @@ SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Surface* screen;
 u32 crna_color, pixel_color;
+char workdir[256] = "";
 
 void text_at(const char *str, word x, byte y);
 
@@ -209,10 +211,8 @@ void show_help()
     text_at("F12         - NMI RESET         ", 0, 4);
     text_at("F12 + SHIFT - NORMAL RESET      ", 0, 5);
     text_at("F8          - TOGGLE CPU SPEED  ", 0, 6);
-    text_at("F2          - SAVE BASIC   (GTP)", 0, 7);
-    text_at("F2 + SHIFT  - SAVE MEMORY  (GTP)", 0, 8);
-    text_at("F3          - LOAD GTP FILE     ", 0, 9);
-    text_at("F4          - CHANGE WORK DIR   ", 0,10);
+    text_at("F2          - LOAD MEMORY  (GTP)", 0, 8);
+    text_at("F2 + SHIFT  - SAVE MEMORY  (GTP)", 0, 7);
 
     SDL_UnlockSurface( screen );
 }
@@ -340,11 +340,8 @@ word LoopZ80(Z80 *R)
                     case SDLK_F1:       // TOGGLE HELP SCREEN
                         active_help = !active_help;
                         break;
-                    case SDLK_F2:       // LOAD/SAVE BASIC
-                        if(shift) save_memory(); else save_basic();
-                        break;
-                    case SDLK_F3:       // LOAD GTP FILE
-                        load_gtp();
+                    case SDLK_F2:       // SAVE/LOAD MEMORY
+                        if(shift) save_memory(); else load_memory();
                         break;
                     case SDLK_F12:      // HARD/NMI RESET
                         if(shift) { ResetZ80(R); return INT_NONE; } else return INT_NMI;
@@ -517,7 +514,7 @@ void init_memory()
 
 void usage(char *arg0)
 {
-    fprintf(stderr, "\nUsage: %s [<GTP file to load> [-j<address>]] [-c<font color>]\n\n", arg0);
+    fprintf(stderr, "\nUsage: %s [<GTP file to load> [-j<address>]] [-c<font color>] [-w<work dir>]\n\n", arg0);
 }
 
 int main(int argc, char** argv) 
@@ -527,6 +524,12 @@ int main(int argc, char** argv)
     int i;
     char *ptr;
     int font_color = 0;
+    char dirname[256];
+
+    if(getcwd(dirname, sizeof(dirname)) != NULL)
+    {
+        memcpy((void*)workdir, (void*)dirname, strlen(dirname)+1);
+    }
 
     for(i=1;i<argc;++i)
     {
@@ -547,6 +550,12 @@ int main(int argc, char** argv)
                     // color
                     font_color = atoi(ptr);
                     break;
+                case 'w':
+                    if(strlen(ptr) < sizeof(workdir))
+                    {
+                        memcpy((void*)workdir, ptr, strlen(ptr) + 1);
+                    }
+                break;
                 default:
                 fprintf(stderr, "Unrecognized option %c", (int)ptr[-1]);
                 return -1;
@@ -557,6 +566,8 @@ int main(int argc, char** argv)
             prg_to_load = ptr;
         }
     }
+
+    fprintf(stderr, "Workdir: %s\n", workdir);
 
     if ( SDL_Init( SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_EVENTS ) == -1 )
     {

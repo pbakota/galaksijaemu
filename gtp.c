@@ -12,7 +12,7 @@ typedef struct {
     // crc.w at the end
 } GTP_datablock;
 
-int load_gtp(char *gtp_file, void* memory)
+int load_gtp_file(char *gtp_file, void* memory, int block)
 {
     Uint16 bcnt = 0;
     SDL_RWops *file = SDL_RWFromFile(gtp_file, "rb");
@@ -88,4 +88,10 @@ int load_gtp(char *gtp_file, void* memory)
 
     SDL_RWclose(file);
     return 0;
+}
+
+
+int save_gtp_file(char* filename, void *memory)
+{
+    return -1;
 }

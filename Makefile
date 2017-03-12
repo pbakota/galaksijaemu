@@ -4,7 +4,7 @@ LDFLAGS=-O2 -L/usr/lib/x86_64-linux-gnu -lSDL2
 
 all: galaxy Galaxy.c Z80/Z80.c Z80/Z80.h gtp.c Z80/dasm Z80/dasm.c
 
-Galaxy.o : Galaxy.c gtp.c
+Galaxy.o : Galaxy.c gtp.c io.c
 	$(CC) -c Galaxy.c -o Galaxy.o $(CFLAGS)
 
 Z80.o : Z80/Z80.c Z80/Z80.h

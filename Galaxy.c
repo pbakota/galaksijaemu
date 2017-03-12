@@ -13,14 +13,14 @@
 
 #include "Z80/Z80.h"
 
-#include "gtp.c"
-
 typedef uint32_t u32;
 
 SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Surface* screen;
 u32 crna_color, pixel_color;
+
+void text_at(const char *str, word x, byte y);
 
 //=========================
 //                       //
@@ -79,6 +79,9 @@ u32 Kmap[54] =
     SDL_SCANCODE_PERIOD, SDL_SCANCODE_SLASH, SDL_SCANCODE_RETURN, SDL_SCANCODE_TAB, SDL_SCANCODE_LCTRL, 
     SDL_SCANCODE_DELETE, SDL_SCANCODE_SCROLLLOCK, SDL_SCANCODE_LSHIFT
 };
+
+#include "gtp.c"
+#include "io.c"
 
 // Z80 stuffs
 inline byte RdZ80(word addr) 
@@ -187,7 +190,7 @@ void draw_char (byte karakter, word pozX, byte pozY)
     }
 }
 
-void text_at(char *str, word x, byte y)
+void text_at(const char *str, word x, byte y)
 {
     while(*str) {
         draw_char(*str++, x++*SIRINA,y*VISINA);
@@ -198,13 +201,19 @@ void show_help()
 {
     SDL_FillRect(screen, NULL, crna_color);
     SDL_LockSurface( screen );
+
     text_at("GALAKSIJA EMULATOR (C)2017 V0.1 ", 0, 0);
     text_at("--------------------------------", 0, 1);
     text_at("F1          - TOGGLE HELP       ", 0, 2);
-    text_at("ESC         - QUIT EMULATOR     ", 0, 2);
-    text_at("F12         - NMI RESET         ", 0, 3);
-    text_at("F11 + SHIFT - NORMAL RESET      ", 0, 4);
-    text_at("F8          - TOGGLE CPU SPEED  ", 0, 5);
+    text_at("ESC         - QUIT EMULATOR     ", 0, 3);
+    text_at("F12         - NMI RESET         ", 0, 4);
+    text_at("F12 + SHIFT - NORMAL RESET      ", 0, 5);
+    text_at("F8          - TOGGLE CPU SPEED  ", 0, 6);
+    text_at("F2          - SAVE BASIC   (GTP)", 0, 7);
+    text_at("F2 + SHIFT  - SAVE MEMORY  (GTP)", 0, 8);
+    text_at("F3          - LOAD GTP FILE     ", 0, 9);
+    text_at("F4          - CHANGE WORK DIR   ", 0,10);
+
     SDL_UnlockSurface( screen );
 }
 
@@ -232,7 +241,7 @@ void refresh_screen (void)
 
 void load_prg(char *prg)
 {
-    if(load_gtp(prg, MEMORY) == 0) 
+    if(load_gtp_file(prg, MEMORY, 0) == 0) 
     {
         R.PC.W = prg_to_jump ? prg_to_jump : 0x0317; // 0x0317 = BASIC WARM START
     }
@@ -318,44 +327,27 @@ word LoopZ80(Z80 *R)
                 break;
             case SDL_KEYDOWN:
             {
+                u32 shift = event.key.keysym.mod & KMOD_SHIFT;
                 switch(event.key.keysym.sym)
                 {
                     case SDLK_ESCAPE:
                         ExitLoop = 1;
                     break;
-                    case SDLK_F1:
-                        active_help = !active_help;
-                        break;
-                    case SDLK_F12:
-                        // NMI F12
-                        return INT_NMI;
-                    break;
-                    case SDLK_F8:
-                        // toggle speed
+                    case SDLK_F8:       // TOGGLE SPEED
                         cpu_speed = (cpu_speed == CPU_SPEED_NORMAL) ? CPU_SPEED_FAST : CPU_SPEED_NORMAL;
                         R->IPeriod = cpu_speed/FRAMES_PER_SECOND;
+                    break;
+                    case SDLK_F1:       // TOGGLE HELP SCREEN
+                        active_help = !active_help;
                         break;
-                    case SDLK_F5:
-                        // Load snapshot
-                        if(event.key.keysym.mod & KMOD_SHIFT)
-                        {
-                            load_snapshot();
-                        }
+                    case SDLK_F2:       // LOAD/SAVE BASIC
+                        if(shift) save_memory(); else save_basic();
                         break;
-                    case SDLK_F6:
-                        // Save snapshot
-                        if(event.key.keysym.mod & KMOD_SHIFT)
-                        {
-                            save_snapshot();
-                        }
+                    case SDLK_F3:       // LOAD GTP FILE
+                        load_gtp();
                         break;
-                    case SDLK_F11:
-                        // Reset F11+SHIFT
-                        if(event.key.keysym.mod & KMOD_SHIFT)
-                        {
-                            ResetZ80(R);
-                            return 0;
-                        }
+                    case SDLK_F12:      // HARD/NMI RESET
+                        if(shift) { ResetZ80(R); return INT_NONE; } else return INT_NMI;
                     break;
                 }
             }

@@ -1,4 +1,6 @@
 *.o
 Z80/*.o
 galaxy
+Z80/dasm
+
 

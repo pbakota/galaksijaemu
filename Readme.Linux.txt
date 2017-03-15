@@ -1,7 +1,7 @@
 Galaxy Linux - Galaksija Emulator for Linux
 ===========================================
 
-v 0.1 - Very first test version. Simple SDL2 port. Basic support for GTP format.
+v 0.1 - The very first test version. Simple SDL2 port. Basic support for GTP format.
       - The emulator's keys:
         * ESC           - Exit from emulator
         * F1            - A very simple help screen
@@ -25,6 +25,18 @@ v 0.1 - Very first test version. Simple SDL2 port. Basic support for GTP format.
         * Cycle exact CPU emulation (This version still does not do that)
         * Video emulation (read actual data from latch). Currently the video output is 
           generated independently from Galaksija.
+
+v 0.2 - What is new:
+      - The key bindings has slightly changed
+        * F1          - TOGGLE HELP       
+        * ESC         - QUIT EMULATOR     
+        * F12 + SHIFT - NORMAL RESET      
+        * F12         - NMI RESET         
+        * F8          - TOGGLE CPU SPEED  
+        * F2 + SHIFT  - SAVE MEMORY  (GTP)
+        * F2          - LOAD MEMORY  (GTP)
+      - Now you can save the memory (by default it saves BASIC programs)
+      - You can now load GTP files within emulator.
 
 This is a Linux port of Galaxy - Galaksija emulator. Just a test version.
 

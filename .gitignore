@@ -2,5 +2,10 @@
 Z80/*.o
 galaxy
 Z80/dasm
+bas2bin
+bin2gtp
+SZ
+T
+*.bo
 
 

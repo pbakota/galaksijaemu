@@ -617,7 +617,7 @@ int main(int argc, char **argv)
     case 1: // green
         pixel_color = SDL_MapRGB(screen->format, 0, 128, 0);
         break;
-    case 2: // ember
+    case 2: // amber
         pixel_color = SDL_MapRGB(screen->format, 147, 128, 106);
         break;
     }

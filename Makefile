@@ -1,5 +1,5 @@
 
-CFLAGS=-Wall -DDEBUG -DLSB_FIRST -I. -I/usr/include/SDL -D_GNU_SOURCE=1 -D_REENTRANT
+CFLAGS=-g -Wall -DDEBUG -DLSB_FIRST -I. -I/usr/include/SDL -D_GNU_SOURCE=1 -D_REENTRANT
 LDFLAGS=-g -L/usr/lib/x86_64-linux-gnu -lSDL2
 BAS2BIN=./bas2bin
 BIN2GTP=./bin2gtp

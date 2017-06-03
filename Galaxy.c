@@ -256,14 +256,15 @@ void load_prg(char *prg)
 word LoopZ80(Z80 *R)
 {
     u32 current_time = SDL_GetTicks();
-    float dt = (float)(current_time - last_time) / 1000.0;
+    float dt = (float)(current_time - last_time) / 1000.0f;
     last_time = current_time;
     //    int frame_ready=0;
 
+    sekunda += dt;
     if (sekunda >= 1.0)
     {
         char buffer[256];
-        sprintf(buffer, "FPS: %d, SPEED=%s", (int)(1.0 / dt), (cpu_speed == CPU_SPEED_NORMAL ? "NORMAL" : "FAST"));
+        sprintf(buffer, "FPS: %d, SPEED=%s", (int)(1.0f/dt), (cpu_speed == CPU_SPEED_NORMAL ? "NORMAL" : "FAST"));
 
         SDL_SetWindowTitle(window, buffer);
 
@@ -271,12 +272,7 @@ word LoopZ80(Z80 *R)
         //frame_ready = 1;
     }
 
-    sekunda += dt;
-
-    if (dt < 1000.0 / 60.0)
-    {
-        SDL_Delay((int)((1000.0 / 60.0) - dt));
-    }
+    SDL_Delay((int)(1000/50));
 
     if (active_help)
     {

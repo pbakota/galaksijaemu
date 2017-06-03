@@ -211,11 +211,14 @@ void load_memory()
     if (input_text("BASIC WARM START (Y/N)?", yn) != 0)
         return;
 
+    warmstart = (yn[0] == 'Y');
+
     const char *path = build_path(workdir, filename);
     if (load_gtp_file(path, MEMORY, 0) == 0)
     {
         if (warmstart)
         {
+            printf("Jump to basic warmstart ...\n");
             R.PC.W = 0x0317; // BASIC WARM START
         }
     }

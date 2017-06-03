@@ -105,7 +105,7 @@ int save_gtp_file(const char *gtp_file, void *memory, word start, word end)
 
     if (file == NULL)
     {
-        fprintf(stderr, "Unable to open GTP file \"%s\"\n", gtp_file);
+        fprintf(stderr, "Unable to write GTP file \"%s\"\n", gtp_file);
         return -1;
     }
 
